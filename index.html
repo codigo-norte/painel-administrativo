@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#142634">
+  <title>Painel administrativo</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/pages.css">
+  <script src="js/pages.js" defer></script>
+  <script src="js/data.js" defer></script>
+  <script src="js/app.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar" aria-label="Menu principal">
+      <a class="brand" href="#overview" aria-label="Meu Site, administração">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 40 40"><path d="M20 2 37 11.5v17L20 38 3 28.5v-17L20 2Z" fill="#087eae"/><path d="m20 2 17 9.5L20 21 3 11.5 20 2Z" fill="#48b7e5"/><path d="M20 21v17L3 28.5v-17L20 21Z" fill="#0876a5"/><path d="m20 21 17-9.5v17L20 38V21Z" fill="#12618a"/></svg>
+        </span>
+        <span><strong>Meu Site</strong><small>Administração</small></span>
+      </a>
+      <nav class="side-nav" aria-label="Navegação">
+        <a class="nav-link active" href="#overview" data-page="overview"><span class="nav-icon">⌂</span>Visão Geral</a>
+        <a class="nav-link" href="#products" data-page="products"><span class="nav-icon">◇</span>Produtos e Serviços</a>
+        <a class="nav-link" href="#categories" data-page="categories"><span class="nav-icon">▦</span>Categorias</a>
+        <a class="nav-link" href="#images" data-page="images"><span class="nav-icon">▧</span>Imagens</a>
+        <a class="nav-link" href="#company" data-page="company"><span class="nav-icon">▤</span>Informações da Empresa</a>
+        <a class="nav-link" href="#account" data-page="account"><span class="nav-icon">♙</span>Minha Conta</a>
+      </nav>
+      <div class="sidebar-bottom">
+        <a class="nav-link sign-out" href="login.html"><span class="nav-icon">↪</span>Sair</a>
+        <p>Painel Administrativo<br>Versão 1.0.0</p>
+      </div>
+    </aside>
+
+    <main class="main-area">
+      <header class="topbar">
+        <button class="icon-button menu-toggle" id="menu-toggle" type="button" aria-label="Abrir menu" aria-expanded="false">☰</button>
+        <div class="welcome">
+          <strong id="greeting">Olá!</strong>
+          <span id="page-subtitle">Aqui está um resumo do seu site.</span>
+        </div>
+        <div class="topbar-actions">
+          <span class="local-badge"><span aria-hidden="true">●</span> Dados neste dispositivo</span>
+          <button class="avatar-button" id="account-shortcut" type="button" aria-label="Abrir minha conta">A</button>
+        </div>
+      </header>
+
+      <div class="content-area">
+        <div id="storage-error" class="notice notice-error" role="alert" hidden></div>
+        <section id="page-content" aria-live="polite"></section>
+      </div>
+    </main>
+  </div>
+  <div class="sidebar-scrim" id="sidebar-scrim"></div>
+  <div id="modal-root"></div>
+  <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
+</body>
+</html>

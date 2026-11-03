@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#142634">
+  <title>Acesso | Painel administrativo</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    body { display: grid; min-height: 100vh; place-items: center; padding: 20px; background: linear-gradient(145deg, #142634, #087eae); }
+    .access-card { width: min(440px, 100%); padding: 30px; border-radius: 12px; background: #fff; box-shadow: 0 25px 70px rgba(8, 24, 35, .25); }
+    .access-brand { display: flex; align-items: center; gap: 11px; margin-bottom: 24px; }
+    .access-brand .brand-mark { width: 40px; height: 40px; }
+    .access-brand strong { display: block; font-family: Manrope, sans-serif; font-size: 15px; }
+    .access-brand small { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; }
+    .access-card h1 { margin: 0; font-family: Manrope, sans-serif; font-size: 21px; }
+    .access-card > p { margin: 8px 0 20px; color: var(--muted); font-size: 12px; line-height: 1.6; }
+    .access-card .notice { margin-bottom: 17px; }
+    .access-card .button { width: 100%; min-height: 42px; }
+    .access-footnote { margin-top: 16px; color: var(--muted); font-size: 10px; line-height: 1.6; text-align: center; }
+  </style>
+</head>
+<body>
+  <main class="access-card">
+    <div class="access-brand">
+      <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 40 40"><path d="M20 2 37 11.5v17L20 38 3 28.5v-17L20 2Z" fill="#087eae"/><path d="m20 2 17 9.5L20 21 3 11.5 20 2Z" fill="#48b7e5"/><path d="M20 21v17L3 28.5v-17L20 21Z" fill="#0876a5"/><path d="m20 21 17-9.5v17L20 38V21Z" fill="#12618a"/></svg></span>
+      <span><strong>Meu Site</strong><small>Painel administrativo</small></span>
+    </div>
+    <h1>Acesso do administrador</h1>
+    <p>Esta página ainda não oferece autenticação. Configure o acesso e a proteção de sessão antes de disponibilizar o painel.</p>
+    <div class="notice notice-error" role="alert">Não publique esta versão como área protegida nem use dados confidenciais. O conteúdo é armazenado somente neste navegador.</div>
+    <a class="button" href="index.html">Abrir painel local</a>
+    <div class="access-footnote">A autenticação deverá proteger o painel, controlar a sessão e permitir a recuperação de senha.</div>
+  </main>
+</body>
+</html>
