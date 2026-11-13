@@ -9,6 +9,8 @@
   const emailInput = document.getElementById("login-email");
   const passwordInput = document.getElementById("login-password");
   const passwordLabel = document.getElementById("login-password-label");
+  const forgotButton = document.getElementById("forgot-password");
+  let mode = "login";
   let inviteToken = null;
 
   function showError(message) {
@@ -21,6 +23,8 @@
   }
 
   function showInviteForm(token) {
+    mode = "invite";
+    forgotButton.hidden = true;
     inviteToken = token;
     description.textContent = "Defina sua senha para ativar a conta administrativa.";
     emailField.hidden = true;
@@ -31,6 +35,8 @@
   }
 
   function showLoginForm(email = "") {
+    mode = "login";
+    forgotButton.hidden = false;
     inviteToken = null;
     description.textContent = "Entre com a conta autorizada para acessar o painel administrativo.";
     emailField.hidden = false;
@@ -52,6 +58,12 @@
 
   async function initialize() {
     try {
+      const params = new URLSearchParams(window.location.hash.slice(1));
+      if (params.has("error") || params.has("error_description")) {
+        window.history.replaceState(null, "", window.location.pathname + window.location.search);
+        showError("Este link é inválido ou expirou. Solicite um novo link de recuperação ou um novo convite.");
+        return;
+      }
       const callback = await window.AdminAuth.handleAuthCallback();
       if (callback && callback.type === "invite") {
         if (callback.token) {
@@ -59,6 +71,18 @@
         } else {
           showError("Este convite é inválido ou expirou. Solicite um novo convite ao administrador.");
         }
+        return;
+      }
+
+      if (callback && callback.type === "recovery") {
+        mode = "recovery";
+        forgotButton.hidden = true;
+        description.textContent = "Escolha uma nova senha para acessar sua conta.";
+        emailField.hidden = true;
+        emailInput.required = false;
+        passwordLabel.textContent = "Nova senha";
+        passwordInput.autocomplete = "new-password";
+        submitButton.textContent = "Salvar nova senha";
         return;
       }
 
@@ -74,8 +98,27 @@
         error,
         "Não foi possível validar o link de acesso. Ele pode ser inválido, expirado ou já utilizado.",
       ));
+    } finally {
+      submitButton.disabled = false;
     }
   }
+
+  forgotButton.addEventListener("click", () => {
+    errorMessage.hidden = true;
+    if (mode === "forgot") {
+      showLoginForm(emailInput.value);
+      passwordInput.parentElement.hidden = false;
+      passwordInput.required = true;
+      forgotButton.textContent = "Esqueci minha senha";
+      return;
+    }
+    mode = "forgot";
+    description.textContent = "Informe seu e-mail para receber um link de redefinição de senha.";
+    passwordInput.parentElement.hidden = true;
+    passwordInput.required = false;
+    submitButton.textContent = "Enviar link de recuperação";
+    forgotButton.textContent = "Voltar para entrar";
+  });
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -84,10 +127,17 @@
 
     const formData = new FormData(form);
     try {
+      if (mode === "forgot") {
+        await window.AdminAuth.requestPasswordRecovery(String(formData.get("email") || "").trim());
+        description.textContent = "Se o e-mail estiver cadastrado, você receberá um link para definir uma nova senha. Confira também a pasta de spam.";
+        return;
+      }
       const password = String(formData.get("password") || "");
       const user = inviteToken
         ? await window.AdminAuth.acceptInvite(inviteToken, password)
-        : await window.AdminAuth.login(
+        : mode === "recovery"
+          ? await window.AdminAuth.updateUser({ password })
+          : await window.AdminAuth.login(
           String(formData.get("email") || "").trim(),
           password,
         );
@@ -104,7 +154,9 @@
     } catch (error) {
       showError(inviteToken
         ? inviteErrorMessage(error)
-        : errorMessageFor(error, "Não foi possível entrar. Verifique suas credenciais e tente novamente."));
+        : mode === "recovery"
+          ? "Não foi possível salvar a senha. Tente novamente ou solicite um novo link de recuperação."
+          : errorMessageFor(error, "Não foi possível concluir. Verifique os dados e tente novamente."));
     } finally {
       submitButton.disabled = false;
     }
