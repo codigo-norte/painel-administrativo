@@ -1055,6 +1055,40 @@
     }
   };
 
+  var resolveCurrentUser = async () => {
+    const client = getClient();
+    let currentUser = client.currentUser();
+    if (!currentUser && isBrowser()) {
+      try {
+        await hydrateSession();
+      } catch {
+      }
+      currentUser = client.currentUser();
+    }
+    if (!currentUser) throw new AuthError("No user is currently logged in");
+    return currentUser;
+  };
+  var requestPasswordRecovery = async (email) => {
+    const client = getClient();
+    try {
+      await client.requestPasswordRecovery(email);
+    } catch (error) {
+      throw AuthError.from(error);
+    }
+  };
+  var updateUser = async (updates) => {
+    const currentUser = await resolveCurrentUser();
+    try {
+      const updatedUser = await currentUser.update(updates);
+      const user = toUser(updatedUser);
+      emitAuthEvent(AUTH_EVENTS.USER_UPDATED, user);
+      return user;
+    } catch (error) {
+      throw AuthError.from(error);
+    }
+  };
+  
+
   // js/auth-client.js
   window.AdminAuth = {
     acceptInvite,
@@ -1062,6 +1096,8 @@
     handleAuthCallback,
     login,
     logout,
+    requestPasswordRecovery,
+    updateUser,
     isAdmin(user) {
       return Boolean(user && Array.isArray(user.roles) && user.roles.includes("admin"));
     }

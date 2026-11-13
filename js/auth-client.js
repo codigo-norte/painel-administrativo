@@ -4,6 +4,8 @@ import {
   handleAuthCallback,
   login,
   logout,
+  requestPasswordRecovery,
+  updateUser,
 } from "@netlify/identity";
 
 window.AdminAuth = {
@@ -12,6 +14,8 @@ window.AdminAuth = {
   handleAuthCallback,
   login,
   logout,
+  requestPasswordRecovery,
+  updateUser,
   isAdmin(user) {
     return Boolean(user && Array.isArray(user.roles) && user.roles.includes("admin"));
   }

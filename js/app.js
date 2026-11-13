@@ -483,6 +483,12 @@
   document.getElementById("account-shortcut").addEventListener("click", () => setPage("account", true));
 
   async function initialize() {
+    // Email links land on the site root. Preserve the callback before checking access.
+    const callbackParams = new URLSearchParams(window.location.hash.slice(1));
+    if (["invite_token", "recovery_token", "confirmation_token", "email_change_token", "access_token", "error", "error_description"].some((key) => callbackParams.has(key))) {
+      window.location.replace("login.html" + window.location.hash);
+      return;
+    }
     try {
       const user = await window.AdminAuth.getUser();
       if (!window.AdminAuth.isAdmin(user)) {
