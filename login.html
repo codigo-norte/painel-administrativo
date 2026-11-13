@@ -19,6 +19,8 @@
     .access-card .button { width: 100%; min-height: 42px; }
     .access-footnote { margin-top: 16px; color: var(--muted); font-size: 10px; line-height: 1.6; text-align: center; }
   </style>
+  <script src="js/auth.bundle.js" defer></script>
+  <script src="js/login.js" defer></script>
 </head>
 <body>
   <main class="access-card">
@@ -27,10 +29,20 @@
       <span><strong>Meu Site</strong><small>Painel administrativo</small></span>
     </div>
     <h1>Acesso do administrador</h1>
-    <p>Esta página ainda não oferece autenticação. Configure o acesso e a proteção de sessão antes de disponibilizar o painel.</p>
-    <div class="notice notice-error" role="alert">Não publique esta versão como área protegida nem use dados confidenciais. O conteúdo é armazenado somente neste navegador.</div>
-    <a class="button" href="index.html">Abrir painel local</a>
-    <div class="access-footnote">A autenticação deverá proteger o painel, controlar a sessão e permitir a recuperação de senha.</div>
+    <p>Entre com a conta autorizada para acessar o painel administrativo.</p>
+    <form id="login-form">
+      <div class="form-field" id="login-email-field">
+        <label id="login-email-label" for="login-email">E-mail</label>
+        <input id="login-email" name="email" type="email" autocomplete="username" required>
+      </div>
+      <div class="form-field" style="margin-top: 15px">
+        <label id="login-password-label" for="login-password">Senha</label>
+        <input id="login-password" name="password" type="password" autocomplete="current-password" required>
+      </div>
+      <div id="login-error" class="notice notice-error" role="alert" hidden></div>
+      <button id="login-submit" class="button" type="submit" style="margin-top: 18px">Entrar</button>
+    </form>
+    <div class="access-footnote">Acesso restrito ao administrador autorizado.</div>
   </main>
 </body>
 </html>

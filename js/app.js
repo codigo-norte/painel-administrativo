@@ -23,6 +23,10 @@
   let currentPage = "overview";
   let filters = { search: "", status: "all" };
   let visitRequestId = 0;
+  let imagesLoaded = false;
+  let imagesLoading = false;
+  let imageError = "";
+  let imageRequestId = 0;
 
   function showToast(message, isError = false) {
     const toast = document.createElement("div");
@@ -56,9 +60,17 @@
       if (active) link.setAttribute("aria-current", "page");
       else link.removeAttribute("aria-current");
     });
-    pageContent.innerHTML = window.AdminPages.render(currentPage, state, filters);
+    pageContent.innerHTML = window.AdminPages.render(currentPage, state, {
+      ...filters,
+      imagesLoaded,
+      imagesLoading,
+      imageError
+    });
     if (currentPage === "overview") {
       refreshVisitStats();
+    }
+    if (currentPage === "images" && !imagesLoaded && !imagesLoading && !imageError) {
+      refreshImages();
     }
   }
 
@@ -114,9 +126,61 @@
     }
   }
 
-  async function commit(nextState, successMessage) {
+  async function refreshImages(force = false) {
+    if (imagesLoading || (imagesLoaded && !force)) return;
+    imagesLoading = true;
+    imageError = "";
+    if (currentPage === "images") renderCurrentPage();
+    const requestId = ++imageRequestId;
     try {
-      await dataSource.save(nextState);
+      const images = await dataSource.getImages();
+      if (!Array.isArray(images) || images.some((image) =>
+        !image || typeof image.id !== "string" || typeof image.url !== "string"
+      )) {
+        throw new Error("A API retornou uma lista de imagens inválida.");
+      }
+      if (requestId !== imageRequestId) return;
+      state = { ...state, images, imageCount: images.length };
+      imagesLoaded = true;
+    } catch (error) {
+      if (requestId !== imageRequestId) return;
+      imageError = error.message || "Não foi possível carregar as imagens.";
+    } finally {
+      if (requestId === imageRequestId) {
+        imagesLoading = false;
+        if (currentPage === "images") renderCurrentPage();
+      }
+    }
+  }
+
+  async function handleImageSubmit(form) {
+    const input = form.elements.namedItem("image");
+    const file = input instanceof HTMLInputElement ? input.files?.[0] : null;
+    if (!file) {
+      showToast("Selecione uma imagem para enviar.", true);
+      return;
+    }
+
+    const submitButton = form.querySelector('button[type="submit"]');
+    if (submitButton) submitButton.disabled = true;
+    try {
+      const image = await dataSource.uploadImage(file);
+      const images = [image, ...(state.images || [])];
+      state = { ...state, images, imageCount: images.length };
+      imagesLoaded = true;
+      imageError = "";
+      renderCurrentPage();
+      showToast("Imagem enviada.");
+    } catch (error) {
+      showToast(error.message || "Não foi possível enviar a imagem.", true);
+    } finally {
+      if (submitButton && submitButton.isConnected) submitButton.disabled = false;
+    }
+  }
+
+  async function commit(nextState, successMessage, persist) {
+    try {
+      await persist();
     } catch (error) {
       showToast(error.message, true);
       return false;
@@ -169,7 +233,7 @@
         <div class="form-grid">
           <div class="form-field form-field-full"><label for="product-name">Nome *</label><input id="product-name" name="name" required maxlength="100" value="${window.AdminPages.escapeHtml(product ? product.name : "")}" placeholder="Ex.: Furadeira de Impacto"></div>
           <div class="form-field"><label for="product-category">Categoria</label><select id="product-category" name="categoryId"><option value="">Sem categoria</option>${categoryOptions}</select>${state.categories.length ? "" : '<span class="field-hint">Cadastre categorias na seção correspondente.</span>'}</div>
-          <div class="form-field"><label for="product-price">Preço (R$) *</label><input id="product-price" name="price" type="number" min="0" max="999999999" step="0.01" required value="${product ? window.AdminPages.escapeHtml(product.price) : ""}" placeholder="0,00"></div>
+          <div class="form-field"><label for="product-price">Preço (R$) *</label><input id="product-price" name="price" type="number" min="0" max="99999999.99" step="0.01" required value="${product ? window.AdminPages.escapeHtml(product.price) : ""}" placeholder="0,00"></div>
           <div class="form-field"><label for="product-status">Status</label><select id="product-status" name="status"><option value="active" ${!product || product.status === "active" ? "selected" : ""}>Ativo</option><option value="inactive" ${product && product.status === "inactive" ? "selected" : ""}>Inativo</option></select></div>
           <div class="form-field form-field-full"><label for="product-description">Descrição</label><textarea id="product-description" name="description" maxlength="500" placeholder="Descreva o produto ou serviço...">${window.AdminPages.escapeHtml(product ? product.description : "")}</textarea><span class="field-hint">Até 500 caracteres.</span></div>
         </div>
@@ -225,7 +289,11 @@
       showToast("Este produto não foi encontrado. Atualize a página e tente novamente.", true);
       return;
     }
-    if (await commit({ ...state, products: nextProducts }, id ? "Produto atualizado." : "Produto cadastrado.")) closeModal();
+    if (await commit(
+      { ...state, products: nextProducts },
+      id ? "Produto atualizado." : "Produto cadastrado.",
+      () => dataSource.saveProduct(item, !id)
+    )) closeModal();
   }
 
   async function handleCategorySubmit(form) {
@@ -248,7 +316,11 @@
       showToast("Esta categoria não foi encontrada. Atualize a página e tente novamente.", true);
       return;
     }
-    if (await commit({ ...state, categories: nextCategories }, id ? "Categoria atualizada." : "Categoria criada.")) closeModal();
+    if (await commit(
+      { ...state, categories: nextCategories },
+      id ? "Categoria atualizada." : "Categoria criada.",
+      () => dataSource.saveCategory(category, !id)
+    )) closeModal();
   }
 
   async function handleCompanySubmit(form) {
@@ -261,7 +333,7 @@
       address: String(values.get("address") || "").trim(),
       about: String(values.get("about") || "").trim()
     };
-    await commit({ ...state, company }, "Informações da empresa salvas.");
+    await commit({ ...state, company }, "Informações da empresa salvas.", () => dataSource.saveCompany(company));
   }
 
   async function handleAccountSubmit(form) {
@@ -274,7 +346,7 @@
       showToast("Informe o nome do perfil.", true);
       return;
     }
-    await commit({ ...state, account }, "Perfil atualizado.");
+    await commit({ ...state, account }, "Perfil atualizado.", () => dataSource.saveAccount(account));
   }
 
   function updateProductResults() {
@@ -305,6 +377,7 @@
     if (action === "new-product") openProductModal();
     if (action === "new-category") openCategoryModal();
     if (action === "retry-visit-stats") refreshVisitStats();
+    if (action === "retry-images") refreshImages(true);
     if (action === "edit-product") {
       const product = state.products.find((item) => item.id === id);
       if (product) openProductModal(product);
@@ -319,7 +392,11 @@
       const product = state.products.find((item) => item.id === id);
       if (!product) return showToast("Produto não encontrado.", true);
       if (window.confirm(`Excluir "${product.name}"? Esta ação não pode ser desfeita.`)) {
-        await commit({ ...state, products: state.products.filter((item) => item.id !== id) }, "Produto excluído.");
+        await commit(
+          { ...state, products: state.products.filter((item) => item.id !== id) },
+          "Produto excluído.",
+          () => dataSource.deleteProduct(id)
+        );
       }
     }
     if (action === "delete-category") {
@@ -328,7 +405,26 @@
       const hasProducts = state.products.some((product) => product.categoryId === id);
       if (hasProducts) return showToast("Não é possível excluir: remova ou reclassifique os produtos desta categoria primeiro.", true);
       if (window.confirm(`Excluir a categoria "${category.name}"?`)) {
-        await commit({ ...state, categories: state.categories.filter((item) => item.id !== id) }, "Categoria excluída.");
+        await commit(
+          { ...state, categories: state.categories.filter((item) => item.id !== id) },
+          "Categoria excluída.",
+          () => dataSource.deleteCategory(id)
+        );
+      }
+    }
+    if (action === "delete-image") {
+      const image = (state.images || []).find((item) => item.id === id);
+      if (!image) return showToast("Imagem não encontrada.", true);
+      if (window.confirm("Excluir esta imagem? Ela deixará de ficar disponível no site.")) {
+        try {
+          await dataSource.deleteImage(id);
+          const images = state.images.filter((item) => item.id !== id);
+          state = { ...state, images, imageCount: images.length };
+          renderCurrentPage();
+          showToast("Imagem excluída.");
+        } catch (error) {
+          showToast(error.message || "Não foi possível excluir a imagem.", true);
+        }
       }
     }
   });
@@ -341,6 +437,7 @@
     if (form.dataset.form === "category") await handleCategorySubmit(form);
     if (form.dataset.form === "company") await handleCompanySubmit(form);
     if (form.dataset.form === "account") await handleAccountSubmit(form);
+    if (form.dataset.form === "image") await handleImageSubmit(form);
   });
 
   document.addEventListener("input", (event) => {
@@ -374,15 +471,29 @@
     menuToggle.setAttribute("aria-expanded", String(isOpen));
   });
   sidebarScrim.addEventListener("click", closeSidebar);
+  document.getElementById("sign-out").addEventListener("click", async (event) => {
+    event.preventDefault();
+    try {
+      await window.AdminAuth.logout();
+      window.location.replace("login.html");
+    } catch (error) {
+      showToast(error.message || "Não foi possível encerrar a sessão.", true);
+    }
+  });
   document.getElementById("account-shortcut").addEventListener("click", () => setPage("account", true));
 
   async function initialize() {
     try {
+      const user = await window.AdminAuth.getUser();
+      if (!window.AdminAuth.isAdmin(user)) {
+        window.location.replace("login.html");
+        return;
+      }
       state = await dataSource.load();
     } catch (error) {
       storageError.hidden = false;
       storageError.textContent = `${error.message} O painel não iniciou para evitar substituir seus dados.`;
-      pageContent.innerHTML = `<section class="panel"><div class="empty-state"><div class="empty-icon" aria-hidden="true">!</div><h3>Não foi possível abrir o painel</h3><p>Corrija o acesso ao armazenamento local e recarregue a página. Seus dados não foram alterados.</p></div></section>`;
+      pageContent.innerHTML = `<section class="panel"><div class="empty-state"><div class="empty-icon" aria-hidden="true">!</div><h3>Não foi possível abrir o painel</h3><p>Verifique as funções do Netlify e a conexão com o banco de dados antes de recarregar a página. Seus dados não foram alterados.</p></div></section>`;
       return;
     }
     setPage(window.location.hash.slice(1) || "overview", false);

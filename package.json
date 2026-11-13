@@ -1,0 +1,29 @@
+{
+  "name": "painel-administrativo",
+  "private": true,
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "netlify dev",
+    "predev": "npm run build:auth",
+    "build": "npm run build:auth",
+    "build:auth": "esbuild js/auth-client.js --bundle --platform=browser --outfile=js/auth.bundle.js",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate:local": "netlify database migrations apply",
+    "db:status": "netlify database status"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^11.1.8",
+    "@netlify/database": "^2.0.1",
+    "@netlify/identity": "^2.0.0",
+    "drizzle-orm": "^1.0.0-beta.22"
+  },
+  "devDependencies": {
+    "@netlify/functions": "^6.0.3",
+    "@types/node": "^26.6.6",
+    "@types/pg": "^8.23.1",
+    "drizzle-kit": "^1.0.0-beta.22",
+    "esbuild": "^0.25.12"
+  }
+}

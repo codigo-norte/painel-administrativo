@@ -84,6 +84,7 @@
 
   function overview(state) {
     const activeProducts = state.products.filter((item) => item.status === "active").length;
+    const imageCount = Number.isInteger(state.imageCount) ? state.imageCount : "—";
     let websiteUrl = "";
     try {
       const candidate = new URL(state.company.website);
@@ -110,8 +111,8 @@
       <div class="stats-grid">
         <article class="panel stat-card"><div class="stat-icon">◇</div><div class="stat-copy"><strong>${state.products.length}</strong><span>Produtos e serviços</span><small>${activeProducts} ativos</small></div></article>
         <article class="panel stat-card"><div class="stat-icon violet">▦</div><div class="stat-copy"><strong>${state.categories.length}</strong><span>Categorias</span><small>Organização do catálogo</small></div></article>
-        <article class="panel stat-card"><div class="stat-icon green">▧</div><div class="stat-copy"><strong>0</strong><span>Imagens</span><small>Gerenciamento desativado nesta versão</small></div></article>
-        <article class="panel stat-card"><div class="stat-icon amber">◷</div><div class="stat-copy"><strong>Local</strong><span>Armazenamento</span><small>Salvo neste dispositivo</small></div></article>
+        <article class="panel stat-card"><div class="stat-icon green">▧</div><div class="stat-copy"><strong>${imageCount}</strong><span>Imagens</span><small>${Number.isInteger(state.imageCount) ? "Armazenadas no Netlify Blobs" : "Abra Imagens para carregar"}</small></div></article>
+        <article class="panel stat-card"><div class="stat-icon amber">◷</div><div class="stat-copy"><strong>PostgreSQL</strong><span>Armazenamento</span><small>Salvo no Netlify Database</small></div></article>
       </div>
       <div class="dashboard-grid">
         <section class="panel">
@@ -244,7 +245,7 @@
     const company = state.company;
     return `${heading("Informações da Empresa", "Essas informações poderão ser exibidas nas páginas públicas do seu site.")}
       <section class="panel">
-        <div class="panel-header"><div><h2>Dados da empresa</h2><p>Edite os dados e salve para manter as alterações neste dispositivo.</p></div></div>
+        <div class="panel-header"><div><h2>Dados da empresa</h2><p>Edite os dados e salve para mantê-los disponíveis em todos os dispositivos.</p></div></div>
         <div class="panel-body">
           <form data-form="company">
             <div class="form-grid">
@@ -264,27 +265,56 @@
   function accountPage(state) {
     const account = state.account;
     const initial = escapeHtml((account.name.trim()[0] || "A").toLocaleUpperCase("pt-BR"));
-    return `${heading("Minha Conta", "Atualize os dados de identificação deste perfil local.")}
+    return `${heading("Minha Conta", "Atualize os dados de identificação do perfil administrativo.")}
       <section class="panel">
-        <div class="panel-header"><div><h2>Perfil</h2><p>As alterações são salvas apenas neste navegador.</p></div></div>
+        <div class="panel-header"><div><h2>Perfil</h2><p>As alterações são salvas no banco de dados.</p></div></div>
         <div class="panel-body">
           <div class="account-profile"><div class="avatar-large" aria-hidden="true">${initial}</div><div><strong>${escapeHtml(account.name || "Administrador")}</strong><span>${escapeHtml(account.email || "E-mail não informado")}</span></div></div>
           <form data-form="account">
             <div class="form-grid">
               <div class="form-field"><label for="account-name">Nome *</label><input id="account-name" name="name" required maxlength="80" value="${escapeHtml(account.name)}" placeholder="Seu nome"></div>
-              <div class="form-field"><label for="account-email">E-mail</label><input id="account-email" name="email" type="email" maxlength="150" value="${escapeHtml(account.email)}" placeholder="seu@email.com"></div>
+              <div class="form-field"><label for="account-email">E-mail do perfil</label><input id="account-email" name="email" type="email" maxlength="150" value="${escapeHtml(account.email)}" placeholder="seu@email.com"><span class="field-hint">Este endereço é salvo no perfil e não altera o e-mail de login do Netlify Identity.</span></div>
             </div>
             <div class="form-actions"><button class="button" type="submit">Salvar perfil</button></div>
           </form>
           <hr class="divider">
-          <div class="notice-card"><strong>Acesso e segurança</strong><br>O login e a troca de senha ainda não estão disponíveis nesta tela. Configure a autenticação e a proteção de sessão antes de disponibilizar o painel.</div>
+          <div class="notice-card"><strong>Acesso e segurança</strong><br>O e-mail de login e a senha são gerenciados pelo Netlify Identity. As alterações nesta tela atualizam apenas o perfil salvo no banco de dados.</div>
         </div>
       </section>`;
   }
 
-  function imagesPage() {
-    return `${heading("Imagens", "O gerenciamento de imagens não faz parte desta primeira versão.")}
-      <section class="panel">${emptyState("▧", "Sem imagens por enquanto", "Como combinado, o painel não inclui envio nem armazenamento de imagens.")}</section>`;
+  function imagesPage(state, options = {}) {
+    const images = Array.isArray(state.images) ? state.images : [];
+    const imageCards = images.map((image, index) => `
+      <article class="image-card">
+        <img src="${escapeHtml(image.url)}" alt="Imagem cadastrada ${index + 1}" loading="lazy">
+        <div class="image-card-footer">
+          <span class="table-subtitle">Imagem ${index + 1}</span>
+          <button class="button button-danger button-small" type="button" data-action="delete-image" data-id="${escapeHtml(image.id)}">Excluir</button>
+        </div>
+      </article>`).join("");
+    const imageContent = options.imagesLoading
+      ? '<p class="field-hint" role="status">Carregando imagens...</p>'
+      : options.imageError
+        ? `<div class="notice notice-error" role="alert">${escapeHtml(options.imageError)} <button class="text-link" type="button" data-action="retry-images">Tentar novamente</button></div>`
+        : images.length
+          ? `<div class="image-grid">${imageCards}</div>`
+          : options.imagesLoaded
+            ? emptyState("▧", "Nenhuma imagem por enquanto", "As imagens enviadas aparecerão aqui.")
+            : "";
+
+    return `${heading("Imagens", "Gerencie as imagens exibidas no site.")}
+      <section class="panel">
+        <div class="panel-header"><div><h2>Imagens do site</h2><p>Arquivos públicos armazenados no Netlify Blobs.</p></div></div>
+        <div class="panel-body">
+          <form class="image-upload-form" data-form="image">
+            <div class="form-field"><label for="image-file">Selecione uma imagem</label><input id="image-file" name="image" type="file" accept="image/jpeg,image/png,image/webp,image/gif" required></div>
+            <button class="button" type="submit">Enviar imagem</button>
+            <span class="field-hint">JPEG, PNG, WebP ou GIF; até 4 MB. Os arquivos enviados ficam disponíveis publicamente.</span>
+          </form>
+          ${imageContent}
+        </div>
+      </section>`;
   }
 
   window.AdminPages = {
@@ -292,7 +322,7 @@
       switch (page) {
         case "products": return productsPage(state, filters);
         case "categories": return categoriesPage(state);
-        case "images": return imagesPage();
+        case "images": return imagesPage(state, filters);
         case "company": return companyPage(state);
         case "account": return accountPage(state);
         default: return overview(state);

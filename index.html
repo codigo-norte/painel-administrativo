@@ -7,6 +7,7 @@
   <title>Painel administrativo</title>
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/pages.css">
+  <script src="js/auth.bundle.js" defer></script>
   <script src="js/pages.js" defer></script>
   <script src="js/data.js" defer></script>
   <script src="js/app.js" defer></script>
@@ -29,7 +30,7 @@
         <a class="nav-link" href="#account" data-page="account"><span class="nav-icon">♙</span>Minha Conta</a>
       </nav>
       <div class="sidebar-bottom">
-        <a class="nav-link sign-out" href="login.html"><span class="nav-icon">↪</span>Sair</a>
+        <a class="nav-link sign-out" id="sign-out" href="login.html"><span class="nav-icon">↪</span>Sair</a>
         <p>Painel Administrativo<br>Versão 1.0.0</p>
       </div>
     </aside>
@@ -42,7 +43,7 @@
           <span id="page-subtitle">Aqui está um resumo do seu site.</span>
         </div>
         <div class="topbar-actions">
-          <span class="local-badge"><span aria-hidden="true">●</span> Dados neste dispositivo</span>
+          <span class="local-badge"><span aria-hidden="true">●</span> Dados no banco</span>
           <button class="avatar-button" id="account-shortcut" type="button" aria-label="Abrir minha conta">A</button>
         </div>
       </header>

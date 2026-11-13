@@ -1,60 +1,101 @@
 (function () {
   "use strict";
 
-  const STORAGE_KEY = "painel-administrativo:data:v1";
+  const endpoint = (resource) => `/.netlify/functions/${resource}`;
 
-  const createInitialState = () => ({
-    version: 1,
-    products: [],
-    categories: [],
-    company: { name: "", website: "", email: "", phone: "", address: "", about: "" },
-    account: { name: "Administrador", email: "" }
-  });
+  async function request(resource, options = {}) {
+    let response;
+    try {
+      response = await window.fetch(endpoint(resource), {
+        method: options.method || "GET",
+        headers: options.body && !(options.body instanceof FormData)
+          ? { "Content-Type": "application/json" }
+          : {},
+        credentials: "same-origin",
+        body: options.body instanceof FormData
+          ? options.body
+          : options.body
+            ? JSON.stringify(options.body)
+            : undefined
+      });
+    } catch {
+      throw new Error("Não foi possível conectar às funções do Netlify. Verifique a conexão e tente novamente.");
+    }
 
-  // A backend adapter can optionally implement getVisitStats({ days }) returning
-  // [{ date: "YYYY-MM-DD", visits: 0 }], with days set to 7, 30, or 90.
-  window.AdminDataSource = window.AdminDataSource || {
+    let payload;
+    try {
+      payload = await response.json();
+    } catch {
+      throw new Error("A API retornou uma resposta inválida.");
+    }
+    if (!response.ok) {
+      throw new Error(payload && payload.error && payload.error.message
+        ? payload.error.message
+        : `A requisição falhou (HTTP ${response.status}).`);
+    }
+    return payload.data;
+  }
+
+  window.AdminDataSource = {
     async load() {
-      let saved;
-      try {
-        saved = window.localStorage.getItem(STORAGE_KEY);
-      } catch (error) {
-        throw new Error(`Não foi possível acessar o armazenamento local: ${error.message}`);
+      const [products, categories, company, account] = await Promise.all([
+        request("products?view=admin"),
+        request("categories?view=admin"),
+        request("company"),
+        request("account")
+      ]);
+      if (!Array.isArray(products) || !Array.isArray(categories) || !company || !account) {
+        throw new Error("A API retornou dados incompatíveis com o painel.");
       }
-      if (saved === null) {
-        const initialState = createInitialState();
-        await this.save(initialState);
-        return initialState;
-      }
-      let parsed;
-      try {
-        parsed = JSON.parse(saved);
-      } catch (error) {
-        throw new Error(`Os dados salvos estão inválidos e não puderam ser lidos: ${error.message}`);
-      }
-      if (!parsed || typeof parsed !== "object" || parsed.version !== 1) {
-        throw new Error("O formato dos dados salvos não é compatível com esta versão do painel.");
-      }
-      const defaults = createInitialState();
-      return {
-        ...defaults,
-        ...parsed,
-        products: Array.isArray(parsed.products)
-          ? parsed.products
-              .filter((product) => !["product-1", "product-2", "product-3"].includes(product.id))
-              .map((product) => ["category-1", "category-2", "category-3"].includes(product.categoryId) ? { ...product, categoryId: "" } : product)
-          : [],
-        categories: Array.isArray(parsed.categories) ? parsed.categories.filter((category) => !["category-1", "category-2", "category-3"].includes(category.id)) : [],
-        company: { ...defaults.company, ...(parsed.company || {}) },
-        account: { ...defaults.account, ...(parsed.account || {}) }
-      };
+      return { version: 1, products, categories, company, account };
     },
-    async save(nextState) {
-      try {
-        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextState));
-      } catch (error) {
-        throw new Error(`Não foi possível salvar neste dispositivo: ${error.message}`);
-      }
+
+    saveProduct(product, isNew) {
+      return request("products", {
+        method: isNew ? "POST" : "PUT",
+        body: product
+      });
+    },
+
+    deleteProduct(id) {
+      return request(`products?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+    },
+
+    saveCategory(category, isNew) {
+      return request("categories", {
+        method: isNew ? "POST" : "PUT",
+        body: category
+      });
+    },
+
+    deleteCategory(id) {
+      return request(`categories?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+    },
+
+    getVisitStats({ days }) {
+      return request(`visits?days=${encodeURIComponent(days)}`);
+    },
+
+    getImages() {
+      return request("images");
+    },
+
+    uploadImage(file) {
+      const body = new FormData();
+      body.set("image", file);
+      return request("images", { method: "POST", body });
+    },
+
+    deleteImage(id) {
+      return request(`images?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+    },
+
+    saveCompany(company) {
+      return request("company", { method: "PUT", body: company });
+    },
+
+    saveAccount(account) {
+      return request("account", { method: "PUT", body: account });
     }
   };
 })();

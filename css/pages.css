@@ -49,6 +49,12 @@
 .account-profile .avatar-large { display: grid; width: 48px; height: 48px; place-items: center; border-radius: 50%; background: #e7f2f7; color: var(--blue); font-family: Manrope, sans-serif; font-size: 18px; font-weight: 700; }
 .account-profile strong { display: block; font-size: 14px; }
 .account-profile span { display: block; margin-top: 4px; color: var(--muted); font-size: 12px; }
+.image-upload-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 10px 14px; margin-bottom: 18px; }
+.image-upload-form .field-hint { grid-column: 1 / -1; }
+.image-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; }
+.image-card { min-width: 0; overflow: hidden; border: 1px solid #e8edf1; border-radius: 8px; background: #fff; }
+.image-card img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; background: #f3f6f8; }
+.image-card-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 9px; }
 .notice-card { padding: 13px 15px; border: 1px solid #e6edf1; border-radius: 8px; background: #f9fbfc; color: #465762; font-size: 13px; line-height: 1.6; }
 .notice-card strong { color: #344957; }
 
@@ -62,6 +68,9 @@
   .stat-icon { width: 30px; height: 30px; font-size: 15px; }
   .stat-copy strong { font-size: 16px; }
   .info-grid { grid-template-columns: 1fr; }
+  .image-upload-form { grid-template-columns: 1fr; }
+  .image-upload-form .field-hint { grid-column: auto; }
+  .image-upload-form > .button { justify-self: start; }
   .site-status { min-height: 170px; align-items: center; padding: 14px; }
   .site-status-content { flex-basis: 60%; }
   .site-status-laptop { width: 40%; min-width: 102px; margin-right: -6px; }
