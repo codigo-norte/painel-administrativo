@@ -484,6 +484,10 @@
 
   async function initialize() {
     try {
+      if (/(?:^|[&#])(?:invite_token|recovery_token|confirmation_token|email_change_token|access_token)=/.test(window.location.hash)) {
+        window.location.replace(`login.html${window.location.search}${window.location.hash}`);
+        return;
+      }
       const user = await window.AdminAuth.getUser();
       if (!window.AdminAuth.isAdmin(user)) {
         window.location.replace("login.html");

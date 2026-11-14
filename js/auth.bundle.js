@@ -1042,6 +1042,27 @@
     const claims = identityContext?.user ?? null;
     return claims ? claimsToUser(claims) : null;
   };
+  var resolveCurrentUser = async () => {
+    const client = getClient();
+    let currentUser2 = client.currentUser();
+    if (!currentUser2 && isBrowser2()) {
+      try {
+        await hydrateSession();
+      } catch {
+      }
+      currentUser2 = client.currentUser();
+    }
+    if (!currentUser2) throw new AuthError("No user is currently logged in");
+    return currentUser2;
+  };
+  var requestPasswordRecovery = async (email) => {
+    const client = getClient();
+    try {
+      await client.requestPasswordRecovery(email);
+    } catch (error) {
+      throw AuthError.from(error);
+    }
+  };
   var acceptInvite = async (token, password) => {
     const client = getClient();
     try {
@@ -1049,6 +1070,17 @@
       const user = toUser(gotrueUser);
       startTokenRefresh();
       emitAuthEvent(AUTH_EVENTS.LOGIN, user);
+      return user;
+    } catch (error) {
+      throw AuthError.from(error);
+    }
+  };
+  var updateUser = async (updates) => {
+    const currentUser2 = await resolveCurrentUser();
+    try {
+      const updatedUser = await currentUser2.update(updates);
+      const user = toUser(updatedUser);
+      emitAuthEvent(AUTH_EVENTS.USER_UPDATED, user);
       return user;
     } catch (error) {
       throw AuthError.from(error);
@@ -1062,6 +1094,8 @@
     handleAuthCallback,
     login,
     logout,
+    requestPasswordRecovery,
+    updateUser,
     isAdmin(user) {
       return Boolean(user && Array.isArray(user.roles) && user.roles.includes("admin"));
     }

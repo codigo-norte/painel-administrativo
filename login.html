@@ -17,6 +17,7 @@
     .access-card > p { margin: 8px 0 20px; color: var(--muted); font-size: 12px; line-height: 1.6; }
     .access-card .notice { margin-bottom: 17px; }
     .access-card .button { width: 100%; min-height: 42px; }
+    .access-link { display: block; margin: 12px auto 0; padding: 4px; border: 0; background: transparent; color: #0876a5; font-size: 12px; text-decoration: underline; cursor: pointer; }
     .access-footnote { margin-top: 16px; color: var(--muted); font-size: 10px; line-height: 1.6; text-align: center; }
   </style>
   <script src="js/auth.bundle.js" defer></script>
@@ -30,17 +31,24 @@
     </div>
     <h1>Acesso do administrador</h1>
     <p>Entre com a conta autorizada para acessar o painel administrativo.</p>
+    <div id="login-message" class="notice notice-info" role="status" hidden></div>
     <form id="login-form">
       <div class="form-field" id="login-email-field">
         <label id="login-email-label" for="login-email">E-mail</label>
         <input id="login-email" name="email" type="email" autocomplete="username" required>
       </div>
-      <div class="form-field" style="margin-top: 15px">
+      <div class="form-field" id="login-password-field" style="margin-top: 15px">
         <label id="login-password-label" for="login-password">Senha</label>
         <input id="login-password" name="password" type="password" autocomplete="current-password" required>
       </div>
+      <div class="form-field" id="login-confirm-password-field" style="margin-top: 15px" hidden>
+        <label for="login-confirm-password">Confirme a senha</label>
+        <input id="login-confirm-password" name="confirm-password" type="password" autocomplete="new-password">
+      </div>
       <div id="login-error" class="notice notice-error" role="alert" hidden></div>
       <button id="login-submit" class="button" type="submit" style="margin-top: 18px">Entrar</button>
+      <button id="forgot-password" class="access-link" type="button">Esqueceu ou precisa definir sua senha?</button>
+      <button id="back-to-login" class="access-link" type="button" hidden>Voltar ao login</button>
     </form>
     <div class="access-footnote">Acesso restrito ao administrador autorizado.</div>
   </main>

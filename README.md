@@ -93,7 +93,9 @@ O contador não identifica visitantes únicos nem filtra bots; chamadas repetida
 
 ## Segurança antes da publicação
 
-O login usa Netlify Identity. Antes de publicar, habilite Identity nas configurações do site, desative o cadastro público ou restrinja-o a convites e conceda o papel administrativo `admin` somente à conta autorizada. A tela de login não oferece cadastro.
+O login usa Netlify Identity. Antes de publicar, habilite Identity nas configurações do site e mantenha o cadastro público desativado/restrito a convites. Configure o endereço do site no Identity para o domínio publicado do painel. Para conceder acesso, convide a pessoa em **Identity → Users → Invite users** na Netlify e atribua a função `admin` à conta convidada. O link do convite abre a tela do painel para a pessoa definir e confirmar a senha. Se a Netlify direcionar o link para a página inicial, ela encaminha convites e links de recuperação para a tela de acesso preservando o token.
+
+Na tela de acesso, **“Esqueceu ou precisa definir sua senha?”** envia um e-mail de recuperação para o endereço da conta. Ao abrir o link, a pessoa escolhe e confirma uma nova senha. O envio depende do Identity estar habilitado e do e-mail de recuperação configurado na Netlify. Verifique também a pasta de spam e solicite um novo link se o anterior expirou.
 
 As leituras públicas de produtos, categorias, empresa e imagens são servidas pelas Netlify Functions, sem acesso ao banco pelo navegador. `GET /.netlify/functions/products` retorna apenas produtos ativos; `GET /.netlify/functions/categories` retorna somente categorias vinculadas a produtos ativos; `GET /.netlify/functions/company` retorna os campos do perfil da empresa; `GET /.netlify/functions/images` lista URLs públicas e `GET /.netlify/functions/images?id=<uuid>` entrega a imagem. Essas rotas aceitam leitura pública e CORS, mas não incluem os dados da conta administrativa.
 
